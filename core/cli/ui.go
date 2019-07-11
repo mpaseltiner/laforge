@@ -2,9 +2,11 @@ package cli
 
 import (
 	"errors"
+	"io"
 	"io/ioutil"
 	"log"
 
+	pb "github.com/cheggaaa/pb/v3"
 	"github.com/hashicorp/packer/packer"
 	"github.com/sirupsen/logrus"
 )
@@ -46,7 +48,6 @@ func NewUI(progname string) packer.Ui {
 
 type TaskUI struct {
 	Name string
-	packer.StackableProgressBar
 }
 
 // Ask implements the Ui interface
@@ -59,7 +60,7 @@ func (t *TaskUI) Say(msg string) {
 
 // Message implements the Ui interface
 func (t *TaskUI) Message(msg string) {
-	// Logger.Debugf("%s => %s", Boldwhite("%s", t.Name), Boldcyan("%s", msg))
+	Logger.Debugf("%s => %s", Boldwhite("%s", t.Name), Boldcyan("%s", msg))
 }
 
 // Error implements the Ui interface
@@ -71,4 +72,10 @@ func (t *TaskUI) Error(msg string) {
 func (t *TaskUI) Machine(m1 string, ms ...string) { return }
 
 // ProgressBar implements the Ui interface
-func (t *TaskUI) ProgressBar() packer.ProgressBar { return &t.StackableProgressBar }
+func (t *TaskUI) TrackProgress(src string, currentSize, totalSize int64, stream io.ReadCloser) (body io.ReadCloser) {
+	bar := pb.New64(totalSize).Add64(currentSize)
+	Logger.Infof("%s => Downloading %s...", Boldwhite("%s", t.Name), Boldblue("%s", src))
+	ret := bar.NewProxyReader(stream)
+	bar.Start()
+	return ret
+}
