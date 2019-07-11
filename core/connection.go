@@ -10,7 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gen0cide/laforge/provisioner"
+
 	"github.com/gen0cide/laforge/core/cli"
+	"github.com/hashicorp/packer/helper/communicator"
 	"github.com/juju/utils/filepath"
 	"golang.org/x/crypto/ssh"
 
@@ -170,6 +173,143 @@ func (c *Connection) ExecuteCommand(cmd *RemoteCommand) error {
 		return c.ExecuteCommandWinRM(cmd)
 	}
 	return c.ExecuteCommandSSH(cmd)
+}
+
+func (c *Connection) UploadExecuteAndDeleteV2(j Doer, scriptsrc string, tmpname string, logdir string) error {
+	if _, err := os.Stat(scriptsrc); err != nil {
+		return fmt.Errorf("problem locating file %s: %v", scriptsrc, err)
+	}
+	if _, err := os.Stat(logdir); err != nil {
+		return fmt.Errorf("problem locating logdir %s: %v", logdir, err)
+	}
+
+	winfp, err := filepath.NewRenderer("windows")
+	if err != nil {
+		return err
+	}
+
+	currfp, err := filepath.NewRenderer("")
+	if err != nil {
+		return err
+	}
+
+	filename := currfp.Base(scriptsrc)
+	if tmpname != "" {
+		filename = tmpname
+	}
+
+	logfilename := strings.Replace(filename, currfp.Ext(filename), ``, -1)
+	logprefix := currfp.Join(logdir, logfilename)
+	stdoutfile := fmt.Sprintf("%s.stdout.log", logprefix)
+	stderrfile := fmt.Sprintf("%s.stderr.log", logprefix)
+
+	stdoutdone := make(chan struct{})
+	stderrdone := make(chan struct{})
+
+	debugstdoutpr, debugstdoutpw := io.Pipe()
+	debugstderrpr, debugstderrpw := io.Pipe()
+
+	wg := new(sync.WaitGroup)
+	stdoutScanner := bufio.NewScanner(debugstdoutpr)
+	stderrScanner := bufio.NewScanner(debugstderrpr)
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		for stdoutScanner.Scan() {
+			text := stdoutScanner.Text()
+			j.StandardOutput(text)
+		}
+		stdoutdone <- struct{}{}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for stderrScanner.Scan() {
+			text := stderrScanner.Text()
+			j.StandardError(text)
+		}
+		stderrdone <- struct{}{}
+	}()
+
+	defer func() {
+		<-stdoutdone
+		<-stderrdone
+		wg.Wait()
+		err := stdoutScanner.Err()
+		if err != nil {
+			cli.Logger.Errorf("Debug STDOUT Scanner Error for %s: %v", j.GetTargetID(), err)
+		}
+		err = stderrScanner.Err()
+		if err != nil {
+			cli.Logger.Errorf("Debug STDERR Scanner Error for %s: %v", j.GetTargetID(), err)
+		}
+	}()
+
+	commcfg := &communicator.Config{}
+	var svccfg interface{}
+
+	if c.IsWinRM() {
+		commcfg.WinRMHost = c.RemoteAddr
+		commcfg.WinRMUser = c.WinRMAuthConfig.User
+		commcfg.WinRMPassword = c.WinRMAuthConfig.Password
+		commcfg.WinRMPort = c.WinRMAuthConfig.Port
+		commcfg.WinRMTimeout = time.Duration(12 * time.Minute)
+		commcfg.WinRMUseSSL = c.WinRMAuthConfig.HTTPS
+		commcfg.WinRMInsecure = c.WinRMAuthConfig.SkipVerify
+		if winfp.Ext(scriptsrc) == `.ps1` {
+			commcfg.Type = "powershell"
+			svccfg = provisioner.WindowsPowershellConfig(scriptsrc, logfilename, 60)
+		} else {
+			commcfg.Type = "windows-shell"
+			svccfg = provisioner.WindowsShellConfig(scriptsrc, logfilename)
+		}
+	} else {
+		commcfg.SSHHost = c.RemoteAddr
+		commcfg.SSHUsername = c.SSHAuthConfig.User
+		commcfg.SSHPort = c.SSHAuthConfig.Port
+		realKeyPath := ""
+		if _, err := os.Stat(c.SSHAuthConfig.IdentityFile); err != nil && os.IsNotExist(err) {
+			if c.SSHAuthConfig.IdentityFileRef == nil {
+				return errors.New("could not locate SSH private key for authentication")
+			}
+			if c.SSHAuthConfig.IdentityFileRef != nil {
+				if _, err := os.Stat(c.SSHAuthConfig.IdentityFileRef.AbsPath); err == nil {
+					realKeyPath = c.SSHAuthConfig.IdentityFileRef.AbsPath
+				}
+			}
+		} else {
+			realKeyPath = c.SSHAuthConfig.IdentityFile
+		}
+		commcfg.SSHPrivateKeyFile = realKeyPath
+		commcfg.Type = "ssh"
+		svccfg = provisioner.LinuxShellConfig(scriptsrc, logfilename)
+	}
+
+	label := fmt.Sprintf("%s://%s/%s", commcfg.Type, c.ProvisionedHost.Base(), logfilename)
+	stderrfh, err := os.OpenFile(stderrfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer stderrfh.Close()
+	cli.Logger.Infof("Logging STDERR to %s", stderrfile)
+	stdoutfh, err := os.OpenFile(stdoutfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer stdoutfh.Close()
+	cli.Logger.Infof("Logging STDOUT to %s", stdoutfile)
+	newstdout := io.MultiWriter(debugstdoutpw, stdoutfh)
+	newstderr := io.MultiWriter(debugstderrpw, stderrfh)
+	defer debugstdoutpw.Close()
+	defer debugstderrpw.Close()
+
+	prov, err := provisioner.New(label, commcfg, svccfg, nil, newstdout, newstderr)
+	if err != nil {
+		return err
+	}
+
+	return prov.Provision()
 }
 
 // UploadExecuteAndDelete is a helper function to chain together a common pattern of execution

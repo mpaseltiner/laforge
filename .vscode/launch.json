@@ -10,12 +10,12 @@
       "mode": "auto",
       "program": "/Users/flint/Code/go/src/github.com/gen0cide/laforge/cmd/laforge/main.go",
       "env": {},
-      "cwd": "/Users/flint/Code/cptc/infra/envs/lfdev/tfgcp",
+      "cwd": "/Users/flint/Code/cptc/infra/envs/uber/tfgcp",
       "args": [
         "-d",
         "infra",
-        "run",
-        "/envs/lfdev/tfgcp/teams/0/networks/vdi/hosts/win06/steps/0-set-local-dns"
+        "apply",
+        // "/envs/lfdev/uber/teams/0/networks/corp/hosts/ad-00/steps/1-create-adds-forest"
         // "/hosts/windows/ad-00",
       ]
     },

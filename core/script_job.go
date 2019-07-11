@@ -134,8 +134,9 @@ func (j *ScriptJob) Do(e chan error) {
 	cli.Logger.Warnf("Performing Script Job:\n  %s %s: %s\n  %s   %s: %s", color.HiBlueString(">>"), color.HiCyanString("SCRIPT"), color.HiGreenString("%s", j.AssetPath), color.HiBlueString(">>"), color.HiCyanString("HOST"), color.HiGreenString("%s", j.Target.ProvisionedHost.Conn.RemoteAddr))
 	actualfilename := fmt.Sprintf("%d-%s", j.Target.StepNumber, filepath.Base(j.AssetPath))
 	logdir := filepath.Join(j.Base.BaseDir, j.Target.ParentLaforgeID(), "logs")
-	err := j.Target.ProvisionedHost.Conn.UploadExecuteAndDelete(j, j.AssetPath, actualfilename, logdir)
+	err := j.Target.ProvisionedHost.Conn.UploadExecuteAndDeleteV2(j, j.AssetPath, actualfilename, logdir)
 	if err != nil {
+		panic(err)
 		cli.Logger.Errorf("Error executing %s: %v", j.JobID, err)
 		e <- err
 		return
