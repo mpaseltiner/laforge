@@ -13,7 +13,7 @@ type Local struct {
 	Arch string
 }
 
-func (l Local) ToString() []string {
+func (l Local) ToString() string {
 	return fmt.Sprintf(`Local
 ┠ OS (string)   = %s
 ┗ Arch (string) = %s`,

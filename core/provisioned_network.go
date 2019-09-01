@@ -5,12 +5,14 @@ import (
 	"path"
 
 	"github.com/cespare/xxhash"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/pkg/errors"
 )
 
 // ProvisionedNetwork is a build artifact type to denote a network inside a team's provisioend infrastructure.
 //easyjson:json
 type ProvisionedNetwork struct {
+	formatter.Formatable
 	ID               string                      `hcl:"id,label" json:"id,omitempty"`
 	Name             string                      `hcl:"name,attr" json:"name,omitempty"`
 	CIDR             string                      `hcl:"cidr,attr" json:"cidr,omitempty"`
@@ -25,6 +27,38 @@ type ProvisionedNetwork struct {
 	OnConflict       *OnConflict                 `json:"-"`
 	Caller           Caller                      `json:"-"`
 	Dir              string                      `json:"-"`
+}
+
+func (p ProvisionedNetwork) ToString() string {
+	return fmt.Sprintf(`ProvisionedNetwork
+┠ ID (string)        = %s
+┠ Name (string)      = %s
+┠ CIDR (string)      = %s
+┠ NetworkID (string) = %s
+┗ Dir (string)       = %s
+`,
+		p.ID,
+		p.Name,
+		p.CIDR,
+		p.NetworkID,
+		p.Dir)
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (p ProvisionedNetwork) Iter() ([]formatter.Formatable, error) {
+	tmp := []formatter.Formatable{
+		p.Network,
+		p.Team,
+		p.Build,
+		p.Environment,
+		p.Competition,
+	}
+
+	for _, v := range p.ProvisionedHosts {
+		tmp = append(tmp, v)
+	}
+
+	return tmp, nil
 }
 
 // Hash implements the Hasher interface

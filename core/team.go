@@ -13,6 +13,7 @@ import (
 
 	"github.com/cespare/xxhash"
 	"github.com/gen0cide/laforge/core/cli"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/gen0cide/laforge/runner"
 	"github.com/pkg/errors"
 )
@@ -26,6 +27,7 @@ var (
 // Team represents a team specific object existing within an environment
 //easyjson:json
 type Team struct {
+	formatter.Formatable
 	ID                  string                         `hcl:"id,label" json:"id,omitempty"`
 	TeamNumber          int                            `hcl:"team_number,attr" json:"team_number,omitempty"`
 	Config              map[string]string              `hcl:"config,attr" json:"config,omitempty"`
@@ -43,6 +45,45 @@ type Team struct {
 	Dir                 string                         `json:"-"`
 	Caller              Caller                         `json:"-"`
 	Runner              *runner.Runner                 `json:"-"`
+}
+
+func (t Team) ToString() string {
+	return fmt.Sprintf(`Team
+┠ ID (string)           = %s
+┠ TeamNumber (int)      = %d
+┠ Config (map)
+%s
+┠ Tags (map)
+%s
+┠ RelBuildPath (string) = %d
+┠ TeamRoot (string)     = %s
+┗ Dir (string)          = %s
+`,
+		t.ID,
+		t.TeamNumber,
+		formatter.FormatStringMap(t.Config),
+		formatter.FormatStringMap(t.Tags),
+		t.RelBuildPath,
+		t.TeamRoot,
+		t.Dir)
+}
+
+func (t Team) Iter() ([]formatter.Formatable, error) {
+	tmp := []formatter.Formatable{
+		t.Build,
+		t.Environment,
+		t.Competition,
+	}
+
+	/*
+		for _, v := range t.ProvisionedNetworks { // Here we include all of our networks from the map
+			tmp = append(tmp, v)
+		}
+		for _, v := range t.ProvisionedHosts { // Add all of our hosts
+			tmp = append(tmp, v)
+		}*/
+
+	return tmp, nil
 }
 
 // Hash implements the Hasher interface

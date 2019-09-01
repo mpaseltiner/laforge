@@ -6,12 +6,14 @@ import (
 	"strings"
 
 	"github.com/cespare/xxhash"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/pkg/errors"
 )
 
 // Network defines a network within a competition environment
 //easyjson:json
 type Network struct {
+	formatter.Formatable
 	ID         string            `hcl:"id,label" json:"id,omitempty"`
 	Name       string            `hcl:"name,attr" json:"name,omitempty"`
 	CIDR       string            `hcl:"cidr,attr" json:"cidr,omitempty"`
@@ -22,11 +24,51 @@ type Network struct {
 	Caller     Caller            `json:"-"`
 }
 
+func (n Network) ToString() string {
+	return fmt.Sprintf(`Network
+┠ ID (string)       = %s
+┠ Name (string)     = %s
+┠ CIDR (string)     = %s
+┠ Vars (map)
+%s
+┠ Tags (map)
+%s
+┗ VDIVisible (bool) = %t
+`,
+		n.ID,
+		n.Name,
+		n.CIDR,
+		formatter.FormatStringMap(n.Vars),
+		formatter.FormatStringMap(n.Tags),
+		n.VDIVisible)
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (n Network) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
+}
+
 // IncludedNetwork is a configuration type used to parse included_hosts out of an environment config.
 //easyjson:json
 type IncludedNetwork struct {
+	formatter.Formatable
 	Name  string   `hcl:"name,label" json:"name,omitempty"`
 	Hosts []string `hcl:"included_hosts,attr" json:"included_hosts,omitempty"`
+}
+
+func (i IncludedNetwork) ToString() string {
+	return fmt.Sprintf(`IncludedNetwork
+┠ Name (string)     = %s
+┗ Hosts (array)
+%s
+`,
+		i.Name,
+		formatter.FormatStringSlice(i.Hosts))
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (i IncludedNetwork) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // String implments the Stringer interface

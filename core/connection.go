@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gen0cide/laforge/core/cli"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/juju/utils/filepath"
 	"golang.org/x/crypto/ssh"
 
@@ -24,6 +25,7 @@ import (
 // Connection defines an access method provisioned host within a team's environment
 //easyjson:json
 type Connection struct {
+	formatter.Formatable
 	ID                 string              `hcl:"id,label" json:"id,omitempty"`
 	Active             bool                `hcl:"active,attr" json:"active,omitempty"`
 	LocalAddr          string              `hcl:"local_addr,attr" json:"local_addr,omitempty"`
@@ -42,6 +44,28 @@ type Connection struct {
 	ProvisionedHost    *ProvisionedHost    `json:"-"`
 	ProvisionedNetwork *ProvisionedNetwork `json:"-"`
 	Caller             Caller              `json:"-"`
+}
+
+func (c Connection) ToString() string {
+	return fmt.Sprintf(`Connection
+┠ ID (string)           = %s
+┠ Active (bool)         = %t
+┠ LocalAddr (string)    = %s
+┠ RemoteAddr (string)   = %s
+┠ ResourceName (string) = %s
+┗ Revision (int)        = %d
+`,
+		c.ID,
+		c.Active,
+		c.LocalAddr,
+		c.RemoteAddr,
+		c.ResourceName,
+		c.Revision)
+}
+
+// Most of the children here are for reference, so in the interst of speed we won't reference them.
+func (c Connection) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // Hash implements the Hasher interface

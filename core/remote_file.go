@@ -12,12 +12,14 @@ import (
 	"strings"
 
 	"github.com/cespare/xxhash"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/pkg/errors"
 )
 
 // RemoteFile is a configurable type that defines a static file that will be placed on a configured target host.
 //easyjson:json
 type RemoteFile struct {
+	formatter.Formatable
 	ID          string            `hcl:"id,label" json:"id,omitempty"`
 	SourceType  string            `hcl:"source_type,attr" json:"source_type,omitempty"`
 	Source      string            `hcl:"source,attr" json:"source,omitempty"`
@@ -32,6 +34,42 @@ type RemoteFile struct {
 	Caller      Caller            `json:"-"`
 	AbsPath     string            `json:"-"`
 	Ext         string            `json:"-"`
+}
+
+func (r RemoteFile) ToString() string {
+	return fmt.Sprintf(`RemoteFile
+┠ ID (string)         = %s
+┠ SourceType (string) = %s
+┠ Source (string)     = %s
+┠ Destination(string) = %s
+┠ Vars (map)
+%s
+┠ Tags (map)
+%s
+┠ Template(bool)      = %t
+┠ Perms(string)       = %s
+┠ Disabled(bool)      = %t
+┠ MD5(string)         = %s
+┠ AbsPath(string)     = %s
+┗ Ext (string)        = %s
+`,
+		r.ID,
+		r.SourceType,
+		r.Source,
+		r.Destination,
+		formatter.FormatStringMap(r.Vars),
+		formatter.FormatStringMap(r.Tags),
+		r.Template,
+		r.Perms,
+		r.Disabled,
+		r.MD5,
+		r.AbsPath,
+		r.Ext)
+}
+
+// We have no children on a RemoteFile, so nothing to iterate on, we'll just return
+func (r RemoteFile) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // Hash implements the Hasher interface

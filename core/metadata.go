@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform/dag"
 
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/gen0cide/laforge/core/graph"
 	"github.com/pkg/errors"
 )
@@ -61,6 +62,7 @@ func ValidateGenericPath(p string) error {
 // Metadata stores metadata about different structs within the environment
 //easyjson:json
 type Metadata struct {
+	formatter.Formatable
 	Dependency Dependency     `json:"-"`
 	ID         string         `json:"id"`
 	ObjectType LFType         `json:"object_type"`
@@ -71,6 +73,30 @@ type Metadata struct {
 	CreatedAt  time.Time      `json:"created_at,omitempty"`
 	ModifiedAt time.Time      `json:"modified_at,omitempty"`
 	Resources  []MetaResource `json:"resources,omitempty"`
+}
+
+func (m Metadata) ToString() string {
+	return fmt.Sprintf(`Metadata
+┠ ID (string)       = %s
+┠ Created (bool)    = %t
+┠ Tainted (bool)    = %t
+┠ Addition (bool)   = %t
+┠ Checksum (string) = %s
+┠ CreatedAt (time)  = %s
+┗ ModifiedAt (time) = %s
+`,
+		m.ID,
+		m.Created,
+		m.Tainted,
+		m.Addition,
+		m.Checksum,
+		m.CreatedAt,
+		m.ModifiedAt)
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (m Metadata) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // LFType describes a string representation of elements in Laforge

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"path/filepath"
+
+	"github.com/gen0cide/laforge/core/formatter"
 )
 
 const (
@@ -48,6 +50,7 @@ type RevMod string
 // Revision is used to describe a small .lfrevision file placed in the root of each path
 //easyjson:json
 type Revision struct {
+	formatter.Formatable
 	ID         string            `json:"id"`
 	Type       LFType            `json:"type"`
 	Status     RevStatus         `json:"status"`
@@ -55,6 +58,30 @@ type Revision struct {
 	Timestamp  time.Time         `json:"timestamp"`
 	ExternalID string            `json:"external_id"`
 	Vars       map[string]string `json:"vars"`
+}
+
+func (r Revision) ToString() string {
+	return fmt.Sprintf(`Identity
+┠ ID (string)         = %s
+┠ Type (string)       = %s
+┠ Status (string)     = %s
+┠ Checksum (int)      = %d
+┠ Timestamp           = %s
+┠ Vars (map)
+%s
+┗ ExternalID (string) = %s
+`,
+		r.ID,
+		r.Type,
+		r.Status,
+		r.Checksum,
+		r.Timestamp,
+		formatter.FormatStringMap(r.Vars),
+		r.ExternalID)
+}
+
+func (r Revision) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // Touch sets the current timestamp and status to active for use within templating engines
@@ -88,6 +115,7 @@ func (r *Revision) AbsPath(basedir string) string {
 		return filepath.Join(basedir, filepath.Dir(r.ID), r.Filename())
 	}
 	return filepath.Join(basedir, r.ID, r.Filename())
+	// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
 }
 
 // Filename returns the base filename of the revision file

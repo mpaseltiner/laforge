@@ -9,12 +9,14 @@ import (
 	"strings"
 
 	"github.com/cespare/xxhash"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/pkg/errors"
 )
 
 // Script defines a configurable type for an executable script object within the laforge configuration
 //easyjson:json
 type Script struct {
+	formatter.Formatable
 	ID           string            `hcl:"id,label" json:"id,omitempty"`
 	Name         string            `hcl:"name,attr" json:"name,omitempty"`
 	Language     string            `hcl:"language,attr" json:"language,omitempty"`
@@ -34,6 +36,46 @@ type Script struct {
 	Findings     []*Finding        `hcl:"finding,block" json:"findings,omitempty"`
 	AbsPath      string            `json:"-"`
 	Caller       Caller            `json:"-"`
+}
+
+func (s Script) ToString() string {
+	return fmt.Sprintf(`Script
+┠ ID (string)          = %s
+┠ Name (string)        = %s
+┠ Language (string)    = %s
+┠ Description (string) = %s
+┠ Source (string)      = %s
+┠ SourceType (string)  = %s
+┠ Cooldown (int)       = %d
+┠ Timeout (int)        = %d
+┠ IgnoreErrors (bool)  = %t
+┠ Args (array)
+%s
+┠ Disabled (bool)      = %t
+┠ Vars (map)
+%s
+┠ Tags (map)
+%s
+┗ AbsPath (string)     = %s
+`,
+		s.ID,
+		s.Name,
+		s.Language,
+		s.Description,
+		s.Source,
+		s.SourceType,
+		s.Cooldown,
+		s.Timeout,
+		s.IgnoreErrors,
+		formatter.FormatStringSlice(s.Args),
+		s.Disabled,
+		formatter.FormatStringMap(s.Vars),
+		formatter.FormatStringMap(s.Tags),
+		s.AbsPath)
+}
+
+func (s Script) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // Hash implements the Hasher interface

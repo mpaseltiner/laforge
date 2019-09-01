@@ -11,6 +11,7 @@ import (
 	"regexp"
 
 	"github.com/gen0cide/laforge/core/cli"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/xlab/treeprint"
 
 	"github.com/imdario/mergo"
@@ -65,6 +66,7 @@ var (
 // Laforge defines the type that holds the global namespace within the laforge configuration engine
 //easyjson:json
 type Laforge struct {
+	formatter.Formatable
 	Filename                   string                         `json:"filename"`
 	Includes                   []string                       `json:"-"`
 	DependencyGraph            treeprint.Tree                 `json:"-"`
@@ -130,6 +132,57 @@ type Laforge struct {
 	StateManager               *State                         `json:"-"`
 	InitialContext             StateContext                   `json:"-"`
 	PathRegistry               *PathRegistry                  `json:"-"`
+}
+
+func (l Laforge) ToString() string {
+	return fmt.Sprintf(`Laforge
+┠ Filename (string)        = %s
+┠ CurrDir (string)         = %s
+┠ BaseDir (string)         = %s
+┠ ValidTeam (bool)         = %t
+┠ ValidBuild (bool)        = %t
+┠ ValidEnv (bool)          = %t
+┠ ValidBase (bool)         = %t
+┠ ValidGlobal (bool)       = %t
+┠ TeamRoot (string)        = %s
+┠ BuildRoot (string)       = %s
+┠ BaseRoot (string)        = %s
+┠ GlobalRoot (string)      = %s
+┠ TeamAbsPath (string)     = %s
+┠ BuildAbsPath (string)    = %s
+┠ EnvAbsPath (string)      = %s
+┠ BaseAbsPath (string)     = %s
+┠ TeamContextID (string)   = %s
+┠ BuildContextID (string)  = %s
+┠ EnvContextID (string)    = %s
+┠ BaseContextID (string)   = %s
+┗ GlobalContextID (string) = %s
+`,
+		l.Filename,
+		l.CurrDir,
+		l.BaseDir,
+		l.ValidTeam,
+		l.ValidBuild,
+		l.ValidEnv,
+		l.ValidBase,
+		l.ValidGlobal,
+		l.TeamRoot,
+		l.BuildRoot,
+		l.BaseRoot,
+		l.GlobalRoot,
+		l.TeamAbsPath,
+		l.BuildAbsPath,
+		l.EnvAbsPath,
+		l.TeamContextID,
+		l.BuildContextID,
+		l.EnvContextID,
+		l.BaseContextID,
+		l.GlobalContextID)
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (l Laforge) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // Include defines a named include type

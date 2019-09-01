@@ -8,12 +8,14 @@ import (
 	"strings"
 
 	"github.com/cespare/xxhash"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/pkg/errors"
 )
 
 // Identity defines a generic human identity primative that can be extended into Employee, Customer, Client, etc.
 //easyjson:json
 type Identity struct {
+	formatter.Formatable
 	ID          string            `hcl:"id,label" json:"id,omitempty"`
 	Firstname   string            `hcl:"firstname,attr" json:"firstname,omitempty"`
 	Lastname    string            `hcl:"lastname,attr" json:"lastname,omitempty"`
@@ -25,6 +27,34 @@ type Identity struct {
 	Tags        map[string]string `hcl:"tags,optional" json:"tags,omitempty"`
 	OnConflict  *OnConflict       `hcl:"on_conflict,block" json:"on_conflict,omitempty"`
 	Caller      Caller            `json:"-"`
+}
+
+func (i Identity) ToString() string {
+	return fmt.Sprintf(`Identity
+┠ ID (string)          = %s
+┠ Firstname (string)   = %s
+┠ Lastname (string)    = %s
+┠ Email (string)       = %s
+┠ Vars (map)
+%s
+┠ Tags (map)
+%s
+┠ Password (string)    = %s
+┗ Description (string) = %s
+`,
+		i.ID,
+		i.Firstname,
+		i.Lastname,
+		i.Email,
+		formatter.FormatStringMap(i.Vars),
+		formatter.FormatStringMap(i.Tags),
+		i.Password,
+		i.Description)
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (i Identity) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // Hash implements the Hasher interface

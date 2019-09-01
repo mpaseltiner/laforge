@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/cespare/xxhash"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/pkg/errors"
 )
 
@@ -17,6 +18,7 @@ const (
 // ProvisionedHost is a build artifact type to denote a host inside a team's provisioend infrastructure.
 //easyjson:json
 type ProvisionedHost struct {
+	formatter.Formatable
 	ID                 string                       `hcl:"id,label" json:"id,omitempty"`
 	HostID             string                       `hcl:"host_id,attr" json:"host_id,omitempty"`
 	SubnetIP           string                       `hcl:"subnet_ip,attr" json:"subnet_ip,omitempty"`
@@ -34,6 +36,38 @@ type ProvisionedHost struct {
 	OnConflict         *OnConflict                  `json:"-"`
 	Caller             Caller                       `json:"-"`
 	Dir                string                       `json:"-"`
+}
+
+func (p ProvisionedHost) ToString() string {
+	return fmt.Sprintf(`ProvisionedHost
+┠ ID (string)       = %s
+┠ HostID (string)   = %s
+┠ SubnetIP (string) = %s
+┗ Dir (string)      = %s
+`,
+		p.ID,
+		p.HostID,
+		p.SubnetIP,
+		p.Dir)
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (p ProvisionedHost) Iter() ([]formatter.Formatable, error) {
+	tmp := []formatter.Formatable{
+		p.ProvisionedNetwork,
+		p.Team,
+		p.Build,
+		p.Environment,
+		p.Competition,
+		p.Network,
+		p.Host,
+	}
+
+	for _, v := range p.ProvisioningSteps {
+		tmp = append(tmp, v)
+	}
+
+	return tmp, nil
 }
 
 // Hash implements the Hasher interface

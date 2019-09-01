@@ -10,13 +10,14 @@ import (
 
 	"github.com/cespare/xxhash"
 	"github.com/gen0cide/laforge/core/cli"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/pkg/errors"
 )
 
 // Host defines a configurable type for customizing host parameters within the infrastructure.
 //easyjson:json
 type Host struct {
-	Formatable
+	formatter.Formatable
 	ID               string                 `cty:"id" hcl:"id,label" json:"id,omitempty"`
 	Hostname         string                 `cty:"hostname" hcl:"hostname,attr" json:"hostname,omitempty"`
 	Description      string                 `cty:"description" hcl:"description,optional" json:"description,omitempty"`
@@ -42,6 +43,47 @@ type Host struct {
 	Commands         map[string]*Command    `json:"-"`
 	RemoteFiles      map[string]*RemoteFile `json:"-"`
 	DNSRecords       map[string]*DNSRecord  `json:"-"`
+}
+
+func (h Host) ToString() string {
+	return fmt.Sprintf(`Identity
+┠ ID (string)               = %s
+┠ Hostname (string)         = %s
+┠ Description (string)      = %s
+┠ OS (string)               = %s
+┠ AMI (string)              = %s
+┠ LastOctet (int)           = %d
+┠ InstanceSize (string)     = %s
+┠ OverridePassword (string) = %s
+┠ Vars (map)
+%s
+┠ Tags (map)
+%s
+┠ ProvisionSteps (array)
+%s
+┠ ExposedTCPPorts (array)
+%s
+┗ ExposedUDPPorts (array)
+%s
+`,
+		h.ID,
+		h.Hostname,
+		h.Description,
+		h.OS,
+		h.AMI,
+		h.LastOctet,
+		h.InstanceSize,
+		h.OverridePassword,
+		formatter.FormatStringMap(h.Vars),
+		formatter.FormatStringMap(h.Tags),
+		formatter.FormatStringSlice(h.ProvisionSteps),
+		formatter.FormatStringSlice(h.ExposedTCPPorts),
+		formatter.FormatStringSlice(h.ExposedUDPPorts))
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (h Host) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // Disk is a configurable type for setting the root volume's disk size in GB

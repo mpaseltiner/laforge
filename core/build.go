@@ -46,8 +46,7 @@ func (b Build) ToString() string {
 ┠ Revision (int)        = %s
 ┠ PathFromBase (string) = %s
 ┠ RelEnvPath (string)   = %s
-┠ Dir (string)          = %s
-┗ RootDomain (string)   = %s
+┗ Dir (string)          = %s
 `,
 		b.ID,
 		b.TeamCount,
@@ -56,17 +55,20 @@ func (b Build) ToString() string {
 		b.Revision,
 		b.PathFromBase,
 		b.RelEnvPath,
-		b.Dir,
-		b.RootDomain)
+		b.Dir)
 }
 
-// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
 func (b Build) Iter() ([]formatter.Formatable, error) {
-	return []formatter.Formatable{
-		b.Maintainer,
+	temp := []formatter.Formatable{
 		b.Environment,
 		b.Competition,
-	}, nil
+	}
+
+	for _, v := range b.Teams {
+		temp = append(temp, v)
+	}
+
+	return temp, nil
 }
 
 // HashConfigMap is used to hash the configuration map in a deterministic order

@@ -5,12 +5,14 @@ import (
 	"path"
 
 	"github.com/cespare/xxhash"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/pkg/errors"
 )
 
 // ProvisioningStep is a build artifact type to denote a specific step inside of a provisioned host
 //easyjson:json
 type ProvisioningStep struct {
+	formatter.Formatable
 	ID                 string              `hcl:"id,label" json:"id,omitempty"`
 	ProvisionerID      string              `hcl:"provisioner_id,attr" json:"provisioner_id,omitempty"`
 	ProvisionerType    string              `hcl:"provisioner_type,attr" json:"provisioner_type,omitempty"`
@@ -32,6 +34,29 @@ type ProvisioningStep struct {
 	OnConflict         *OnConflict         `json:"-"`
 	Caller             Caller              `json:"-"`
 	Dir                string              `json:"-"`
+}
+
+func (p ProvisioningStep) ToString() string {
+	return fmt.Sprintf(`ProvisioningStep
+┠ ID (string)              = %s
+┠ ProvisionerID (string)   = %s
+┠ ProvisionerType (string) = %s
+┠ StepNumber (int)         = %d
+┠ Status (string)          = %s
+┗ Dir (string)             = %s
+`,
+		p.ID,
+		p.ProvisionerID,
+		p.ProvisionerType,
+		p.StepNumber,
+		p.Status,
+		p.Dir)
+}
+
+// Given that the provisioning step will most likely include all of these other items
+// that have already been listed, we are going to just leave them for now.
+func (p ProvisioningStep) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // Hash implements the Hasher interface

@@ -31,7 +31,7 @@ type Command struct {
 	Caller       Caller            `json:"-"`
 }
 
-func (c Command) ToString() []string {
+func (c Command) ToString() string {
 	return fmt.Sprintf(`Command
 ┠ ID (string)          = %s
 ┠ Name (string)        = %d

@@ -2,11 +2,13 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"net/mail"
 	"os/user"
 	"reflect"
 
 	"github.com/gen0cide/laforge/core/cli"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/google/uuid"
 
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -15,10 +17,29 @@ import (
 // User defines a laforge command line user and their properties
 //easyjson:json
 type User struct {
+	formatter.Formatable
 	ID    string `hcl:"id,label" cty:"id" json:"id,omitempty"`
 	Name  string `hcl:"name,attr" cty:"name" json:"name,omitempty"`
 	UUID  string `hcl:"uuid,optional" cty:"uuid" json:"uuid,omitempty"`
 	Email string `hcl:"email,attr" cty:"email" json:"email,omitempty"`
+}
+
+func (u User) ToString() string {
+	return fmt.Sprintf(`User
+┠ ID (string)    = %s
+┠ Name (string)  = %s
+┠ UUID (string)  = %s
+┗ Email (string) = %s
+`,
+		u.ID,
+		u.Name,
+		u.UUID,
+		u.Email)
+}
+
+// We have no children on a Command, so nothing to iterate on, we'll just return
+func (u User) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // UserWizard runs an interactive prompt to get the user's information.
