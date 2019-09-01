@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/cespare/xxhash"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/pkg/errors"
 )
 
@@ -19,6 +20,30 @@ type DNS struct {
 	Config     map[string]string `hcl:"config,optional" json:"config,omitempty"`
 	OnConflict *OnConflict       `hcl:"on_conflict,block" json:"on_conflict,omitempty"`
 	Caller     Caller            `json:"-"`
+}
+
+func (d DNS) ToString() string {
+	return fmt.Sprintf(`DNS
+┠ ID (string)         = %s
+┠ DNSServers (array)
+%s
+┠ NTPServers (array)
+%s
+┠ Config (map)
+%s
+┠ Type (string)       = %s
+┗ RootDomain (string) = %t
+`,
+		d.ID,
+		formatter.FormatStringSlice(d.DNSServers),
+		formatter.FormatStringSlice(d.NTPServers),
+		formatter.FormatStringMap(d.Config),
+		d.RootDomain)
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (d DNS) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // Hash implements the Hasher interface

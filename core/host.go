@@ -16,6 +16,7 @@ import (
 // Host defines a configurable type for customizing host parameters within the infrastructure.
 //easyjson:json
 type Host struct {
+	Formatable
 	ID               string                 `cty:"id" hcl:"id,label" json:"id,omitempty"`
 	Hostname         string                 `cty:"hostname" hcl:"hostname,attr" json:"hostname,omitempty"`
 	Description      string                 `cty:"description" hcl:"description,optional" json:"description,omitempty"`

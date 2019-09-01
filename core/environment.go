@@ -24,6 +24,7 @@ var (
 // Environment represents the basic configurable type for a Laforge environment container
 //easyjson:json
 type Environment struct {
+	formatter.Formattable
 	ID               string              `hcl:"id,label" json:"id,omitempty"`
 	CompetitionID    string              `hcl:"competition_id,attr" json:"competition_id,omitempty"`
 	Name             string              `hcl:"name,attr" json:"name,omitempty"`
@@ -45,6 +46,53 @@ type Environment struct {
 	Teams            map[string]*Team    `json:"-"`
 	Caller           Caller              `json:"-"`
 	Competition      *Competition        `json:"-"`
+}
+
+// ToString returns a string based representation of this DNSRecord
+func (e Environment) ToString() string {
+	return fmt.Sprintf(`Environment
+┠ ID (string)     = %s
+┠ CompetitionID (string)   = %s
+┠ Name (string)   = %s
+┠ Description (string)   = %s
+┠ Builder (string)   = %s
+┠ TeamCount (int)   = %d
+┠ AdminCIDRs (array)
+%s
+┠ Config (map)
+%s
+┠ Tags (map)
+%s
+┠ BaseDir (string)   = %s
+┗ Revision (string)   = %s
+`,
+		e.ID,
+		e.CompetitionID,
+		e.Name,
+		e.Description,
+		e.Builder,
+		e.TeamCount,
+		formatter.FormatStringSlice(e.AdminCIDRs),
+		r.Type,
+		r.Zone)
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (e Environment) Iter() ([]formatter.Formatable, error) {
+	tmp := []formatter.Formatable{ // Include the two static items
+		e.Competition,
+		e.Build,
+	}
+	tmp = append(tmp, c.Networks...)  // Then we include all of our networks
+
+	for _, v := range c.IncludedNetworks { // Here we include all of our networks from the map
+		tmp = append(tmp, v)
+	}
+	for _, v := range c.IncludedHosts { // Add all of our hosts
+		tmp = append(tmp, v)
+	}
+
+	return tmp, nil
 }
 
 // Hash implements the Hasher interface

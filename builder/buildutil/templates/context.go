@@ -105,7 +105,6 @@ func (c *Context) Localize() {
 		Arch: runtime.GOARCH,
 	}
 	c.Local = locale
-	return
 }
 
 // Attach wires up all the core Laforge types into a cohesive Context bundle for template rendering

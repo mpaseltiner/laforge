@@ -6,12 +6,14 @@ import (
 	"strings"
 
 	"github.com/cespare/xxhash"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/pkg/errors"
 )
 
 // DNSRecord is a configurable type for defining DNS entries related to this host in the core DNS infrastructure (if enabled)
 //easyjson:json
 type DNSRecord struct {
+	formatter.Formatable
 	ID         string            `hcl:"id,label" json:"id,omitempty"`
 	Name       string            `hcl:"name,attr" json:"name,omitempty"`
 	Values     []string          `hcl:"values,optional" json:"values,omitempty"`
@@ -22,6 +24,36 @@ type DNSRecord struct {
 	Disabled   bool              `hcl:"disabled,optional" json:"disabled,omitempty"`
 	OnConflict *OnConflict       `hcl:"on_conflict,block" json:"on_conflict,omitempty"`
 	Caller     Caller            `json:"-"`
+}
+
+// ToString returns a string based representation of this DNSRecord
+func (r DNSRecord) ToString() string {
+	return fmt.Sprintf(`DNSRecord
+┠ ID (string)     = %s
+┠ Name (string)   = %s
+┠ Disabled (bool) = %t
+┠ Values (array)
+%s
+┠ Vars (map)
+%s
+┠ Tags (map)
+%s
+┠ Type (string)   = %s
+┗ Zone (string)   = %s
+`,
+		r.ID,
+		r.Name,
+		r.Disabled,
+		formatter.FormatStringSlice(r.Values),
+		formatter.FormatStringMap(r.Vars),
+		formatter.FormatStringMap(r.Tags),
+		r.Type,
+		r.Zone)
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (r DNSRecord) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // Hash implements the Hasher interface

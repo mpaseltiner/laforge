@@ -10,12 +10,14 @@ import (
 	"strings"
 
 	"github.com/cespare/xxhash"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/pkg/errors"
 )
 
 // Build represents the output of a laforge build
 //easyjson:json
 type Build struct {
+	formatter.Formatable
 	ID           string            `hcl:"id,label" json:"id,omitempty"`
 	TeamCount    int               `hcl:"team_count,attr" json:"team_count,omitempty"`
 	Config       map[string]string `hcl:"config,attr" json:"config,omitempty"`
@@ -31,6 +33,40 @@ type Build struct {
 	Caller       Caller            `json:"-"`
 	LocalDBFile  *LocalFileRef     `json:"-"`
 	Teams        map[string]*Team  `json:"-"`
+}
+
+func (b Build) ToString() string {
+	return fmt.Sprintf(`Build
+┠ ID (string)           = %s
+┠ TeamCount (int)       = %d
+┠ Config (map)
+%s
+┠ Tags (map)
+%s
+┠ Revision (int)        = %s
+┠ PathFromBase (string) = %s
+┠ RelEnvPath (string)   = %s
+┠ Dir (string)          = %s
+┗ RootDomain (string)   = %s
+`,
+		b.ID,
+		b.TeamCount,
+		formatter.FormatStringMap(b.Config),
+		formatter.FormatStringMap(b.Tags),
+		b.Revision,
+		b.PathFromBase,
+		b.RelEnvPath,
+		b.Dir,
+		b.RootDomain)
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (b Build) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{
+		b.Maintainer,
+		b.Environment,
+		b.Competition,
+	}, nil
 }
 
 // HashConfigMap is used to hash the configuration map in a deterministic order

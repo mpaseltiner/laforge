@@ -4,12 +4,14 @@ import (
 	"fmt"
 
 	"github.com/cespare/xxhash"
+	"github.com/gen0cide/laforge/core/formatter"
 	"github.com/pkg/errors"
 )
 
 // Competition is a configurable type that holds competition wide settings
 //easyjson:json
 type Competition struct {
+	formatter.Formatable
 	ID           string            `hcl:"id,label" json:"id,omitempty"`
 	BaseDir      string            `hcl:"base_dir,optional" json:"base_dir,omitempty"`
 	RootPassword string            `hcl:"root_password,attr" json:"root_password,omitempty"`
@@ -18,6 +20,28 @@ type Competition struct {
 	Config       map[string]string `hcl:"config,optional" json:"config,omitempty"`
 	OnConflict   *OnConflict       `hcl:"on_conflict,block" json:"on_conflict,omitempty"`
 	Caller       Caller            `json:"-"`
+}
+
+func (c Competition) ToString() string {
+	return fmt.Sprintf(`Competition
+┠ ID (string)           = %s
+┠ Config (map)
+%s
+┠ BaseDir (string)      = %d
+┗ RootPassword (string) = %s
+`,
+		c.ID,
+		formatter.FormatStringMap(c.Config),
+		c.BaseDir,
+		c.RootPassword)
+}
+
+// We have no children on a DNSRecord, so nothing to iterate on, we'll just return
+func (c Competition) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{
+		c.DNS,
+		c.Remote,
+	}, nil
 }
 
 // Hash implements the Hasher interface

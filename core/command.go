@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/cespare/xxhash"
+	"github.com/gen0cide/laforge/core/formatter"
 
 	"github.com/pkg/errors"
 )
@@ -13,6 +14,7 @@ import (
 // Command represents an executable command that can be defined as part of a host configuration step
 //easyjson:json
 type Command struct {
+	formatter.Formatable
 	ID           string            `hcl:"id,label" json:"id,omitempty"`
 	Name         string            `hcl:"name,attr" json:"name,omitempty"`
 	Description  string            `hcl:"description,attr" json:"description,omitempty"`
@@ -27,6 +29,39 @@ type Command struct {
 	OnConflict   *OnConflict       `hcl:"on_conflict,block" json:"on_conflict,omitempty"`
 	Maintainer   *User             `hcl:"maintainer,block" json:"maintainer,omitempty"`
 	Caller       Caller            `json:"-"`
+}
+
+func (c Command) ToString() []string {
+	return fmt.Sprintf(`Command
+┠ ID (string)          = %s
+┠ Name (string)        = %d
+┠ Description (string) = %d
+┠ Program (string)     = %d
+┠ Args (array)
+%s
+┠ Vars (map)
+%s
+┠ Tags (map)
+%s
+┠ Cooldown (int)       = %d
+┠ IgnoreErrors (bool)  = %s
+┗ Disabled (bool)      = %s
+`,
+		c.ID,
+		c.Name,
+		c.Description,
+		c.Program,
+		formatter.FormatStringSlice(c.Args),
+		formatter.FormatStringMap(c.Vars),
+		formatter.FormatStringMap(c.Tags),
+		c.Cooldown,
+		c.IgnoreErrors,
+		c.Disabled)
+}
+
+// We have no children on a Command, so nothing to iterate on, we'll just return
+func (c Command) Iter() ([]formatter.Formatable, error) {
+	return []formatter.Formatable{}, nil
 }
 
 // Hash implements the Hasher interface
